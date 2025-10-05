@@ -14,18 +14,26 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Interpolation;
+import ru.mipt.bit.platformer.model.FieldModel;
+import ru.mipt.bit.platformer.model.TankModel;
+import ru.mipt.bit.platformer.model.TreeModel;
 import ru.mipt.bit.platformer.util.GdxGameUtils;
 import ru.mipt.bit.platformer.util.TileMovement;
+import ru.mipt.bit.platformer.view.FieldView;
+import ru.mipt.bit.platformer.view.TankView;
+import ru.mipt.bit.platformer.view.TreeView;
 
-import static com.badlogic.gdx.Input.Keys.*;
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 
 public class GameDesktopLauncher implements ApplicationListener {
     private static final float MOVEMENT_SPEED = 0.4f;
 
     private Batch batch;
-    private Field field;
-    private Tank player;
+    private FieldView fieldView;
+    private PlayerInputHandler inputHandler;
+    
+    private Texture tankTexture;
+    private Texture treeTexture;
 
     @Override
     public void create() {
@@ -35,17 +43,25 @@ public class GameDesktopLauncher implements ApplicationListener {
         MapRenderer renderer = GdxGameUtils.createSingleLayerMapRenderer(map, batch);
         TiledMapTileLayer groundLayer = GdxGameUtils.getSingleLayer(map);
         TileMovement tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
+        
+        tankTexture = new Texture("images/tank_blue.png");
+        treeTexture = new Texture("images/greenTree.png");
 
-        field = new Field(map, renderer, groundLayer);
+        FieldModel fieldModel = new FieldModel();
+        TankModel playerModel = new TankModel(new GridPoint2(1, 1), fieldModel);
+        TreeModel treeModel = new TreeModel(new GridPoint2(1, 3));
+        
+        fieldModel.addObject(playerModel);
+        fieldModel.addObject(treeModel);
 
-        player = new Tank(new TextureRegion(new Texture("images/tank_blue.png")),
-                new GridPoint2(1, 1), tileMovement, MOVEMENT_SPEED, field);
-
-        Tree tree = new Tree(new TextureRegion(new Texture("images/greenTree.png")),
-                new GridPoint2(1, 3), groundLayer);
-
-        field.addObject(player);
-        field.addObject(tree);
+        fieldView = new FieldView(map, renderer);
+        TankView playerView = new TankView(playerModel, new TextureRegion(tankTexture), tileMovement, MOVEMENT_SPEED);
+        TreeView treeView = new TreeView(treeModel, new TextureRegion(treeTexture), groundLayer);
+        
+        fieldView.addObjectView(playerView);
+        fieldView.addObjectView(treeView);
+        
+        inputHandler = new PlayerInputHandler(playerModel);
     }
 
     @Override
@@ -55,20 +71,24 @@ public class GameDesktopLauncher implements ApplicationListener {
 
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        if (Gdx.input.isKeyPressed(UP) || Gdx.input.isKeyPressed(W)) player.move(Direction.UP);
-        if (Gdx.input.isKeyPressed(DOWN) || Gdx.input.isKeyPressed(S)) player.move(Direction.DOWN);
-        if (Gdx.input.isKeyPressed(LEFT) || Gdx.input.isKeyPressed(A)) player.move(Direction.LEFT);
-        if (Gdx.input.isKeyPressed(RIGHT) || Gdx.input.isKeyPressed(D)) player.move(Direction.RIGHT);
+        inputHandler.handleInput();
 
-        player.update(deltaTime);
+        fieldView.update(deltaTime);
 
-        field.render(batch);
+        fieldView.render(batch);
     }
 
     @Override public void resize(int width, int height) {}
     @Override public void pause() {}
     @Override public void resume() {}
-    @Override public void dispose() { field.dispose(); batch.dispose(); }
+    
+    @Override 
+    public void dispose() { 
+        fieldView.dispose(); 
+        batch.dispose();
+        tankTexture.dispose();
+        treeTexture.dispose();
+    }
 
     public static void main(String[] args) {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
