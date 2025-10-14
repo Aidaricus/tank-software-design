@@ -3,6 +3,7 @@ package ru.mipt.bit.platformer.view;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.maps.MapRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,11 @@ public class FieldView {
     }
 
     public void render(Batch batch) {
-        renderer.render();
+        if (renderer instanceof OrthogonalTiledMapRenderer) {
+            ((OrthogonalTiledMapRenderer) renderer).render();
+        } else {
+            renderer.render();
+        }
         batch.begin();
         for (GameObjectView view : objectViews) {
             view.render(batch);

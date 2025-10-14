@@ -2,28 +2,27 @@ package ru.mipt.bit.platformer;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import ru.mipt.bit.platformer.model.TankModel;
+import ru.mipt.bit.platformer.model.Movable;
 
 public class PlayerInputHandler {
-    private final TankModel tankModel;
+    private final Movable target;
 
-    public PlayerInputHandler(TankModel tankModel) {
-        this.tankModel = tankModel;
+    public PlayerInputHandler(Movable target) {
+        this.target = target;
     }
 
     public void handleInput() {
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP) || Gdx.input.isKeyJustPressed(Input.Keys.W)) {
-            tankModel.move(Direction.UP);
+            target.move(Direction.UP);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.S)) {
-            tankModel.move(Direction.DOWN);
+            target.move(Direction.DOWN);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT) || Gdx.input.isKeyJustPressed(Input.Keys.A)) {
-            tankModel.move(Direction.LEFT);
+            target.move(Direction.LEFT);
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT) || Gdx.input.isKeyJustPressed(Input.Keys.D)) {
-            tankModel.move(Direction.RIGHT);
+            target.move(Direction.RIGHT);
         }
-        
     }
 }
