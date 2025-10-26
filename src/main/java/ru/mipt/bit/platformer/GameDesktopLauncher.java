@@ -44,12 +44,16 @@ public class GameDesktopLauncher implements ApplicationListener {
         FieldModel fieldModel = new FieldModel();
         fieldView = new FieldView(map, renderer);
 
-        LevelLoader levelLoader = new LevelLoader(map, tileMovement);
-        levelLoader.loadObjectsTo(fieldModel, fieldView);
+        LevelGenerator levelGenerator;
 
-        TankModel playerModel = levelLoader.getPlayerModel();
+        levelGenerator = new RandomLevelGenerator(tileMovement, groundLayer, 10, 8, 0.25f);
+    
+        
+        levelGenerator.generate(fieldModel, fieldView);
+
+        TankModel playerModel = levelGenerator.getPlayerModel();
         if (playerModel == null) {
-            throw new IllegalStateException("Player object with type 'player' not found on the map 'entities' layer!");
+            throw new IllegalStateException("Level generator did not create a player!");
         }
 
         inputHandler = new PlayerInputHandler(playerModel);
@@ -73,17 +77,9 @@ public class GameDesktopLauncher implements ApplicationListener {
         batch.dispose();
     }
 
-    @Override
-    public void resize(int width, int height) {
-    }
-
-    @Override
-    public void pause() {
-    }
-
-    @Override
-    public void resume() {
-    }
+    @Override public void resize(int width, int height) {}
+    @Override public void pause() {}
+    @Override public void resume() {}
 
     public static void main(String[] args) {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
