@@ -7,6 +7,8 @@ import com.badlogic.gdx.math.GridPoint2;
 import ru.mipt.bit.platformer.model.*;
 import ru.mipt.bit.platformer.util.TileMovement;
 import ru.mipt.bit.platformer.view.FieldView;
+import ru.mipt.bit.platformer.view.GameObjectView;
+import ru.mipt.bit.platformer.view.HealthBarDecoratorView;
 import ru.mipt.bit.platformer.view.TankView;
 import ru.mipt.bit.platformer.view.TreeView;
 
@@ -38,7 +40,7 @@ public class RandomLevelGenerator implements LevelGenerator {
     }
 
     @Override
-    public void generate(FieldModel fieldModel, FieldView fieldView) {
+    public void generate(FieldModel fieldModel, FieldView fieldView, UIState uiState) {
         List<GridPoint2> allCells = new ArrayList<>();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
@@ -66,10 +68,11 @@ public class RandomLevelGenerator implements LevelGenerator {
             
             TankModel aiTank = new TankModel(aiPos, fieldModel);
             TankView aiView = new TankView(aiTank, new TextureRegion(aiTankTexture), tileMovement, 0.5f);
+            GameObjectView decoratedAiView = new HealthBarDecoratorView(aiView, uiState);
             
             aiTanks.add(aiTank);
             fieldModel.addObject(aiTank);
-            fieldView.addObjectView(aiView);
+            fieldView.addObjectView(decoratedAiView);
         }
 
         if (freeCells.isEmpty()) {
@@ -79,9 +82,10 @@ public class RandomLevelGenerator implements LevelGenerator {
         
         this.playerModel = new TankModel(playerPosition, fieldModel);
         TankView playerView = new TankView(playerModel, new TextureRegion(playerTankTexture), tileMovement, 0.4f);
+        GameObjectView decoratedPlayerView = new HealthBarDecoratorView(playerView, uiState);
 
         fieldModel.addObject(playerModel);
-        fieldView.addObjectView(playerView);
+        fieldView.addObjectView(decoratedPlayerView);
     }
 
     @Override

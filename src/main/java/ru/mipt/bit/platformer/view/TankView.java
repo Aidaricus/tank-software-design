@@ -77,4 +77,9 @@ public class TankView implements GameObjectView {
         if (delta.equals(Direction.RIGHT.delta())) return Direction.RIGHT;
         return Direction.RIGHT;
     }
+
+    @Override
+    public Rectangle getRectangle() {
+        return rectangle;
+}
 }

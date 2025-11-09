@@ -7,10 +7,23 @@ public class TankModel extends GameObjectModel implements Movable {
     private final ObstacleProvider obstacleProvider;
     private GridPoint2 destination;
 
+    private final int maxHealth;
+    private int health;
+
     public TankModel(GridPoint2 initialCoordinates, ObstacleProvider obstacleProvider) {
         super(initialCoordinates);
         this.obstacleProvider = obstacleProvider;
         this.destination = new GridPoint2(initialCoordinates);
+        this.maxHealth = 100;
+        this.health = this.maxHealth;
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
     }
 
     @Override
@@ -20,6 +33,10 @@ public class TankModel extends GameObjectModel implements Movable {
 
     public void finalizeMovement() {
         coordinates.set(destination);
+    }
+
+    public void takeDamage(int amount) {
+        this.health = Math.max(0, this.health - amount);
     }
 
     @Override

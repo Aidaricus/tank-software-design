@@ -7,9 +7,7 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.GridPoint2;
 import ru.mipt.bit.platformer.model.*;
 import ru.mipt.bit.platformer.util.TileMovement;
-import ru.mipt.bit.platformer.view.FieldView;
-import ru.mipt.bit.platformer.view.TankView;
-import ru.mipt.bit.platformer.view.TreeView;
+import ru.mipt.bit.platformer.view.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,7 +31,7 @@ public class FileLevelGenerator implements LevelGenerator {
     }
 
     @Override
-    public void generate(FieldModel fieldModel, FieldView fieldView) {
+    public void generate(FieldModel fieldModel, FieldView fieldView, UIState uiState) {
         try {
             List<String> lines = Files.readAllLines(Paths.get(Gdx.files.internal(filePath).path()));
             int height = lines.size();
@@ -54,8 +52,9 @@ public class FileLevelGenerator implements LevelGenerator {
                         case 'X':
                             this.playerModel = new TankModel(coordinates, fieldModel);
                             TankView playerView = new TankView(playerModel, new TextureRegion(tankTexture), tileMovement, 0.4f);
+                            GameObjectView decoratedPlayerView = new HealthBarDecoratorView(playerView, uiState);
                             fieldModel.addObject(playerModel);
-                            fieldView.addObjectView(playerView);
+                            fieldView.addObjectView(decoratedPlayerView);
                             break;
                     }
                 }

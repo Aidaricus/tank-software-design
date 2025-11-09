@@ -32,4 +32,9 @@ public class TreeView implements GameObjectView {
     public TreeModel getModel() {
         return model;
     }
+
+    @Override
+    public Rectangle getRectangle() {
+        return rectangle;
+    }
 }

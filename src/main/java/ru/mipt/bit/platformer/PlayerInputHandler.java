@@ -7,9 +7,11 @@ import ru.mipt.bit.platformer.model.TankModel;
 
 public class PlayerInputHandler {
     private final TankModel playerTank;
+    private final UIState uiState;
 
-    public PlayerInputHandler(TankModel playerTank) {
+    public PlayerInputHandler(TankModel playerTank, UIState uiState) {
         this.playerTank = playerTank;
+        this.uiState = uiState;
     }
 
     public void handleInput() {
@@ -24,6 +26,9 @@ public class PlayerInputHandler {
         }
         if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT) || Gdx.input.isKeyJustPressed(Input.Keys.D)) {
             new MoveCommand(playerTank, Direction.RIGHT).execute();
+        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
+            new ToggleHealthBarCommand(uiState).execute();
         }
     }
 }

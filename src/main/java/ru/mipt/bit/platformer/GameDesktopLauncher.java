@@ -24,6 +24,7 @@ public class GameDesktopLauncher implements ApplicationListener {
     private FieldView fieldView;
     private PlayerInputHandler inputHandler;
     private AIController aiController;
+    private UIState uiState;
 
     @Override
     public void create() {
@@ -45,14 +46,16 @@ public class GameDesktopLauncher implements ApplicationListener {
         TileMovement tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
         fieldView = new FieldView(map, renderer);
 
+        uiState = new UIState();
+
         RandomLevelGenerator levelGenerator = new RandomLevelGenerator(tileMovement, groundLayer, worldWidth, worldHeight, 0.2f);
-        levelGenerator.generate(fieldModel, fieldView);
+        levelGenerator.generate(fieldModel, fieldView, uiState);
 
         TankModel playerModel = levelGenerator.getPlayerModel();
         if (playerModel == null) {
             throw new IllegalStateException("Level generator did not create a player!");
         }
-        inputHandler = new PlayerInputHandler(playerModel);
+        inputHandler = new PlayerInputHandler(playerModel, uiState);
 
         aiController = new AIController();
         for (TankModel aiTank : levelGenerator.getAiTanks()) {
