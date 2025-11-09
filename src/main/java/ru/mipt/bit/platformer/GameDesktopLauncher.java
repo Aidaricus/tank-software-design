@@ -23,6 +23,7 @@ public class GameDesktopLauncher implements ApplicationListener {
     private Batch batch;
     private FieldView fieldView;
     private PlayerInputHandler inputHandler;
+    private AIController aiController;
 
     @Override
     public void create() {
@@ -33,30 +34,30 @@ public class GameDesktopLauncher implements ApplicationListener {
         if (groundLayer == null) {
             throw new IllegalStateException("Map must have a TiledMapTileLayer named 'Ground'");
         }
+
+        int worldWidth = groundLayer.getWidth();
+        int worldHeight = groundLayer.getHeight();
+        FieldModel fieldModel = new FieldModel(worldWidth, worldHeight);
         
         OrthogonalTiledMapRenderer renderer = new OrthogonalTiledMapRenderer(map, batch);
-        float viewWidth = groundLayer.getWidth() * groundLayer.getTileWidth();
-        float viewHeight = groundLayer.getHeight() * groundLayer.getTileHeight();
-        renderer.getViewBounds().set(0, 0, viewWidth, viewHeight);
+        renderer.getViewBounds().set(0, 0, worldWidth * groundLayer.getTileWidth(), worldHeight * groundLayer.getTileHeight());
         
         TileMovement tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
-
-        FieldModel fieldModel = new FieldModel();
         fieldView = new FieldView(map, renderer);
 
-        LevelGenerator levelGenerator;
-
-        levelGenerator = new RandomLevelGenerator(tileMovement, groundLayer, 10, 8, 0.25f);
-    
-        
+        RandomLevelGenerator levelGenerator = new RandomLevelGenerator(tileMovement, groundLayer, worldWidth, worldHeight, 0.2f);
         levelGenerator.generate(fieldModel, fieldView);
 
         TankModel playerModel = levelGenerator.getPlayerModel();
         if (playerModel == null) {
             throw new IllegalStateException("Level generator did not create a player!");
         }
-
         inputHandler = new PlayerInputHandler(playerModel);
+
+        aiController = new AIController();
+        for (TankModel aiTank : levelGenerator.getAiTanks()) {
+            aiController.addTank(aiTank);
+        }
     }
 
     @Override
@@ -67,6 +68,7 @@ public class GameDesktopLauncher implements ApplicationListener {
         float deltaTime = Gdx.graphics.getDeltaTime();
 
         inputHandler.handleInput();
+        aiController.update();
         fieldView.update(deltaTime);
         fieldView.render(batch);
     }

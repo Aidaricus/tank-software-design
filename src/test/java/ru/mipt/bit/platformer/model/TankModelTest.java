@@ -14,34 +14,67 @@ class TankModelTest {
     
     @BeforeEach
     void setUp() {
-        fieldModel = new FieldModel();
+        fieldModel = new FieldModel(10, 8);
         initialPosition = new GridPoint2(1, 1);
-        // Создаем танк в начальной позиции
         tankModel = new TankModel(initialPosition.cpy(), fieldModel);
         fieldModel.addObject(tankModel);
     }
 
     @Test
-    void testMoveToFreeCell() {
-        // Даем команду танку двигаться вверх, где поле свободно
+    void testMoveToFreeCellInitiatesMovement() {
         tankModel.move(Direction.UP);
         
-        // Ожидаем, что новые координаты будут (1, 2)
-        GridPoint2 expectedPosition = new GridPoint2(1, 2);
+        GridPoint2 expectedDestination = new GridPoint2(1, 2);
         
-        // Сравниваем ожидаемый результат с фактическим
-        assertEquals(expectedPosition, tankModel.getCoordinates(), "Tank should move to the new coordinates");
+        assertEquals(initialPosition, tankModel.getCoordinates(), "Tank coordinates should not change immediately");
+        assertEquals(expectedDestination, tankModel.getDestination(), "Tank destination should be set to the new cell");
+        assertTrue(tankModel.isMoving(), "Tank should be in a moving state");
     }
 
     @Test
-    void testMoveToOccupiedCell() {
-        // Создаем препятствие (дерево) на пути танка
+    void testMoveToOccupiedCellDoesNothing() {
         fieldModel.addObject(new TreeModel(new GridPoint2(1, 2)));
 
-        // Даем команду танку двигаться вверх на занятую клетку
         tankModel.move(Direction.UP);
         
-        // Ожидаем, что танк останется на своей начальной позиции
-        assertEquals(initialPosition, tankModel.getCoordinates(), "Tank should not move into an occupied cell");
+        assertEquals(initialPosition, tankModel.getCoordinates(), "Tank coordinates should not change");
+        assertEquals(initialPosition, tankModel.getDestination(), "Tank destination should not change");
+        assertFalse(tankModel.isMoving(), "Tank should not be in a moving state");
+    }
+
+    @Test
+    void testMoveToBoundaryDoesNothing() {
+        TankModel cornerTank = new TankModel(new GridPoint2(0, 0), fieldModel);
+        
+        cornerTank.move(Direction.LEFT);
+        
+        assertFalse(cornerTank.isMoving(), "Tank should not move left into a boundary");
+
+        cornerTank.move(Direction.DOWN);
+
+        assertFalse(cornerTank.isMoving(), "Tank should not move down into a boundary");
+    }
+
+    @Test
+    void testIgnoresNewMoveCommandWhileAlreadyMoving() {
+        tankModel.move(Direction.UP);
+        assertTrue(tankModel.isMoving());
+        assertEquals(new GridPoint2(1, 2), tankModel.getDestination());
+        
+        tankModel.move(Direction.RIGHT);
+        
+        assertEquals(new GridPoint2(1, 2), tankModel.getDestination(), "Destination should remain unchanged while moving");
+    }
+
+    @Test
+    void testFinalizeMovementUpdatesCoordinates() {
+        tankModel.move(Direction.UP);
+        GridPoint2 destination = tankModel.getDestination();
+
+        tankModel.finalizeMovement();
+
+        assertEquals(destination, tankModel.getCoordinates(), "Tank coordinates should be updated to the destination after finalize");
+        assertEquals(destination, tankModel.getDestination(), "Tank destination should be same as coordinates after finalize");
+        assertFalse(tankModel.isMoving(), "Tank should not be in a moving state after finalize");
     }
 }

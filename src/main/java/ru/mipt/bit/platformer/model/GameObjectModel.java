@@ -13,4 +13,12 @@ public abstract class GameObjectModel {
         return new GridPoint2(coordinates);
     }
 
+    public GridPoint2 getDestination() {
+        return getCoordinates();
+    }
+
+    public boolean isMoving() {
+        return !getCoordinates().equals(getDestination());
+    }
+
 }

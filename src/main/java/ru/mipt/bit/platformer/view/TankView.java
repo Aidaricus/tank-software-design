@@ -40,19 +40,20 @@ public class TankView implements GameObjectView {
 
     @Override
     public void update(float deltaTime) {
-        if (!lastModelCoordinates.equals(model.getCoordinates())) {
+        if (model.isMoving() && isEqual(movementProgress, 1f)) {
             movementProgress = 0f;
-            startCoordinates.set(lastModelCoordinates);
-            destCoordinates.set(model.getCoordinates());
-            
+            startCoordinates.set(model.getCoordinates());
+            destCoordinates.set(model.getDestination());
             rotation = getDirection(startCoordinates, destCoordinates).rotation();
         }
-
-        lastModelCoordinates.set(model.getCoordinates());
 
         if (!isEqual(movementProgress, 1f)) {
             movementProgress = GdxGameUtils.continueProgress(movementProgress, deltaTime, movementSpeed);
             tileMovement.moveRectangleBetweenTileCenters(rectangle, startCoordinates, destCoordinates, movementProgress);
+
+            if (isEqual(movementProgress, 1f)) {
+                model.finalizeMovement();
+            }
         } else {
              tileMovement.moveRectangleToTileCenter(rectangle, model.getCoordinates());
         }
