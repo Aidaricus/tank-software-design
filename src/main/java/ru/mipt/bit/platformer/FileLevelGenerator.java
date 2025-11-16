@@ -1,13 +1,10 @@
 package ru.mipt.bit.platformer;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.GridPoint2;
-import ru.mipt.bit.platformer.model.*;
-import ru.mipt.bit.platformer.util.TileMovement;
-import ru.mipt.bit.platformer.view.*;
+import ru.mipt.bit.platformer.model.FieldModel;
+import ru.mipt.bit.platformer.model.TankModel;
+import ru.mipt.bit.platformer.model.TreeModel;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,22 +13,15 @@ import java.util.List;
 
 public class FileLevelGenerator implements LevelGenerator {
 
-    private final TileMovement tileMovement;
-    private final TiledMapTileLayer groundLayer;
     private final String filePath;
-
     private TankModel playerModel;
-    private final Texture treeTexture = new Texture("images/greenTree.png");
-    private final Texture tankTexture = new Texture("images/tank_blue.png");
 
-    public FileLevelGenerator(TileMovement tileMovement, TiledMapTileLayer groundLayer, String filePath) {
-        this.tileMovement = tileMovement;
-        this.groundLayer = groundLayer;
+    public FileLevelGenerator(String filePath) {
         this.filePath = filePath;
     }
 
     @Override
-    public void generate(FieldModel fieldModel, FieldView fieldView, UIState uiState) {
+    public void generate(FieldModel fieldModel) {
         try {
             List<String> lines = Files.readAllLines(Paths.get(Gdx.files.internal(filePath).path()));
             int height = lines.size();
@@ -45,16 +35,11 @@ public class FileLevelGenerator implements LevelGenerator {
                     switch (symbol) {
                         case 'T':
                             TreeModel treeModel = new TreeModel(coordinates);
-                            TreeView treeView = new TreeView(treeModel, new TextureRegion(treeTexture), groundLayer);
                             fieldModel.addObject(treeModel);
-                            fieldView.addObjectView(treeView);
                             break;
                         case 'X':
                             this.playerModel = new TankModel(coordinates, fieldModel);
-                            TankView playerView = new TankView(playerModel, new TextureRegion(tankTexture), tileMovement, 0.4f);
-                            GameObjectView decoratedPlayerView = new HealthBarDecoratorView(playerView, uiState);
                             fieldModel.addObject(playerModel);
-                            fieldView.addObjectView(decoratedPlayerView);
                             break;
                     }
                 }

@@ -4,26 +4,38 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.maps.MapRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
+import ru.mipt.bit.platformer.model.GameObjectListener;
+import ru.mipt.bit.platformer.model.GameObjectModel;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-public class FieldView {
+public class FieldView implements GameObjectListener {
+
     private final TiledMap map;
     private final MapRenderer renderer;
-    private final List<GameObjectView> objectViews = new ArrayList<>();
+    private final Map<GameObjectModel, GameObjectView> viewMap = new HashMap<>();
+    private final ViewFactory viewFactory;
 
-    public FieldView(TiledMap map, MapRenderer renderer) {
+    public FieldView(TiledMap map, MapRenderer renderer, ViewFactory viewFactory) {
         this.map = map;
         this.renderer = renderer;
+        this.viewFactory = viewFactory;
     }
 
-    public void addObjectView(GameObjectView view) {
-        objectViews.add(view);
+    @Override
+    public void onGameObjectAdded(GameObjectModel model) {
+        GameObjectView view = viewFactory.createView(model);
+        viewMap.put(model, view);
+    }
+
+    @Override
+    public void onGameObjectRemoved(GameObjectModel model) {
+        viewMap.remove(model);
     }
 
     public void update(float deltaTime) {
-        for (GameObjectView view : objectViews) {
+        for (GameObjectView view : viewMap.values()) {
             view.update(deltaTime);
         }
     }
@@ -34,8 +46,9 @@ public class FieldView {
         } else {
             renderer.render();
         }
+
         batch.begin();
-        for (GameObjectView view : objectViews) {
+        for (GameObjectView view : viewMap.values()) {
             view.render(batch);
         }
         batch.end();
@@ -43,5 +56,6 @@ public class FieldView {
 
     public void dispose() {
         map.dispose();
+        viewFactory.dispose();
     }
 }

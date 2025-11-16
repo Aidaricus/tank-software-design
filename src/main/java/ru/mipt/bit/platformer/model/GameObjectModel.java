@@ -12,6 +12,10 @@ public abstract class GameObjectModel {
     public GridPoint2 getCoordinates() {
         return new GridPoint2(coordinates);
     }
+    
+    public void setCoordinates(GridPoint2 newCoordinates) {
+        this.coordinates.set(newCoordinates);
+    }
 
     public GridPoint2 getDestination() {
         return getCoordinates();
@@ -20,5 +24,4 @@ public abstract class GameObjectModel {
     public boolean isMoving() {
         return !getCoordinates().equals(getDestination());
     }
-
 }

@@ -7,6 +7,8 @@ import java.util.List;
 
 public class FieldModel implements ObstacleProvider {
     private final List<GameObjectModel> objects = new ArrayList<>();
+    private final List<GameObjectModel> objectsToRemove = new ArrayList<>();
+    private final List<GameObjectListener> listeners = new ArrayList<>();
     private final int width;
     private final int height;
 
@@ -15,8 +17,36 @@ public class FieldModel implements ObstacleProvider {
         this.height = height;
     }
 
+    public void addListener(GameObjectListener listener) {
+        listeners.add(listener);
+    }
+
     public void addObject(GameObjectModel obj) {
         objects.add(obj);
+        for (GameObjectListener listener : listeners) {
+            listener.onGameObjectAdded(obj);
+        }
+    }
+
+    public void removeObject(GameObjectModel obj) {
+        objectsToRemove.add(obj);
+    }
+
+    public void processRemovals() {
+        if (objectsToRemove.isEmpty()) {
+            return;
+        }
+        for (GameObjectModel obj : objectsToRemove) {
+            objects.remove(obj);
+            for (GameObjectListener listener : listeners) {
+                listener.onGameObjectRemoved(obj);
+            }
+        }
+        objectsToRemove.clear();
+    }
+    
+    public List<GameObjectModel> getObjects() {
+        return new ArrayList<>(objects);
     }
 
     @Override

@@ -6,9 +6,9 @@ import ru.mipt.bit.platformer.Direction;
 public class TankModel extends GameObjectModel implements Movable {
     private final ObstacleProvider obstacleProvider;
     private GridPoint2 destination;
-
     private final int maxHealth;
     private int health;
+    private Direction orientation = Direction.UP;
 
     public TankModel(GridPoint2 initialCoordinates, ObstacleProvider obstacleProvider) {
         super(initialCoordinates);
@@ -16,14 +16,6 @@ public class TankModel extends GameObjectModel implements Movable {
         this.destination = new GridPoint2(initialCoordinates);
         this.maxHealth = 100;
         this.health = this.maxHealth;
-    }
-
-    public int getHealth() {
-        return health;
-    }
-
-    public int getMaxHealth() {
-        return maxHealth;
     }
 
     @Override
@@ -35,12 +27,9 @@ public class TankModel extends GameObjectModel implements Movable {
         coordinates.set(destination);
     }
 
-    public void takeDamage(int amount) {
-        this.health = Math.max(0, this.health - amount);
-    }
-
     @Override
     public void move(Direction direction) {
+        this.orientation = direction;
         if (isMoving()) {
             return;
         }
@@ -50,5 +39,28 @@ public class TankModel extends GameObjectModel implements Movable {
         if (obstacleProvider.isCellFree(nextCoordinates)) {
             this.destination.set(nextCoordinates);
         }
+    }
+
+    public void shoot(FieldModel fieldModel) {
+        GridPoint2 bulletStartPos = coordinates.cpy().add(orientation.delta());
+
+        if (!fieldModel.isCellFree(bulletStartPos)) {
+            return;
+        }
+
+        BulletModel bullet = new BulletModel(bulletStartPos, this.orientation, this);
+        fieldModel.addObject(bullet);
+    }
+
+    public int getHealth() {
+        return health;
+    }
+
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+    
+    public void takeDamage(int amount) {
+        this.health = Math.max(0, this.health - amount);
     }
 }
