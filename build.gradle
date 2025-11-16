@@ -21,7 +21,44 @@ repositories {
 }
 
 dependencies {
-    implementation deps.gdx.gdx
-    implementation deps.gdx.backend_lwjgl3
-    implementation deps.gdx.platform_desktop
+    implementation "com.badlogicgames.gdx:gdx:1.12.0"
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:1.12.0"
+    implementation "com.badlogicgames.gdx:gdx-platform:1.12.0:natives-desktop"
+
+    implementation "org.lwjgl:lwjgl:3.3.3"
+    implementation "org.lwjgl:lwjgl-glfw:3.3.3"
+    implementation "org.lwjgl:lwjgl-opengl:3.3.3"
+
+    runtimeOnly "org.lwjgl:lwjgl:3.3.3:natives-macos-arm64"
+    runtimeOnly "org.lwjgl:lwjgl-glfw:3.3.3:natives-macos-arm64"
+    runtimeOnly "org.lwjgl:lwjgl-opengl:3.3.3:natives-macos-arm64"
+
+    implementation "org.lwjgl:lwjgl-openal:3.3.3"
+    runtimeOnly "org.lwjgl:lwjgl-openal:3.3.3:natives-macos-arm64"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:5.8.2"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:5.8.2"
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+        resources {
+            srcDirs = ['src/test/resources']
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
 }

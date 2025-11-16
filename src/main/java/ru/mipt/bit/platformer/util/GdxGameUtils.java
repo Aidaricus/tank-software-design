@@ -12,6 +12,9 @@ import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 
 import java.util.NoSuchElementException;
 
@@ -98,5 +101,23 @@ public final class GdxGameUtils {
                 .setWidth(tileWidth)
                 .setHeight(tileHeight)
                 .getCenter(new Vector2());
+    }
+    private static final Texture oneWhitePixel;
+
+    static {
+        Pixmap pixmap = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pixmap.setColor(Color.WHITE);
+        pixmap.fill();
+        oneWhitePixel = new Texture(pixmap);
+        pixmap.dispose();
+    }
+    public static void drawHealthBar(Batch batch, float x, float y, float width, float height, float percentage) {
+        batch.setColor(Color.BLACK);
+        batch.draw(oneWhitePixel, x, y, width, height);
+        
+        batch.setColor(Color.GREEN);
+        batch.draw(oneWhitePixel, x, y, width * percentage, height);
+
+        batch.setColor(Color.WHITE);
     }
 }
