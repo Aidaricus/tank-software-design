@@ -4,176 +4,117 @@ import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.maps.MapRenderer;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
-import com.badlogic.gdx.math.GridPoint2;
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Interpolation;
-import com.badlogic.gdx.math.Rectangle;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import ru.mipt.bit.platformer.model.FieldModel;
+import ru.mipt.bit.platformer.model.TankModel;
 import ru.mipt.bit.platformer.util.TileMovement;
+import ru.mipt.bit.platformer.view.FieldView;
+import ru.mipt.bit.platformer.view.ViewFactory;
 
-import static com.badlogic.gdx.Input.Keys.*;
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
-import static com.badlogic.gdx.math.MathUtils.isEqual;
-import static ru.mipt.bit.platformer.util.GdxGameUtils.*;
 
+// Убираем @Component, так как создаем его вручную
 public class GameDesktopLauncher implements ApplicationListener {
 
-    private static final float MOVEMENT_SPEED = 0.4f;
-
+    private final FieldModel fieldModel;
+    private final GameProcessor gameProcessor;
+    private final AIController aiController;
+    
     private Batch batch;
+    private FieldView fieldView;
+    private PlayerInputHandler inputHandler;
+    
 
-    private TiledMap level;
-    private MapRenderer levelRenderer;
-    private TileMovement tileMovement;
-
-    private Texture blueTankTexture;
-    private TextureRegion playerGraphics;
-    private Rectangle playerRectangle;
-    // player current position coordinates on level 10x8 grid (e.g. x=0, y=1)
-    private GridPoint2 playerCoordinates;
-    // which tile the player want to go next
-    private GridPoint2 playerDestinationCoordinates;
-    private float playerMovementProgress = 1f;
-    private float playerRotation;
-
-    private Texture greenTreeTexture;
-    private TextureRegion treeObstacleGraphics;
-    private GridPoint2 treeObstacleCoordinates = new GridPoint2();
-    private Rectangle treeObstacleRectangle = new Rectangle();
+    // Конструктор получает бины от Spring
+    public GameDesktopLauncher(FieldModel fieldModel, GameProcessor gameProcessor, AIController aiController) {
+        this.fieldModel = fieldModel;
+        this.gameProcessor = gameProcessor;
+        this.aiController = aiController;
+    }
 
     @Override
     public void create() {
+        // Создаем libGDX-объекты здесь, внутри контекста libGDX
         batch = new SpriteBatch();
+        TiledMap map = new TmxMapLoader().load("level.tmx");
+        UIState uiState = new UIState();
 
-        // load level tiles
-        level = new TmxMapLoader().load("level.tmx");
-        levelRenderer = createSingleLayerMapRenderer(level, batch);
-        TiledMapTileLayer groundLayer = getSingleLayer(level);
-        tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
+        TiledMapTileLayer groundLayer = (TiledMapTileLayer) map.getLayers().get("Ground");
+        
+        OrthogonalTiledMapRenderer renderer = new OrthogonalTiledMapRenderer(map, batch);
+        renderer.getViewBounds().set(0, 0, fieldModel.getWidth() * groundLayer.getTileWidth(), fieldModel.getHeight() * groundLayer.getTileHeight());
+        
+        TileMovement tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
+        ViewFactory viewFactory = new ViewFactory(tileMovement, groundLayer, uiState);
+        fieldView = new FieldView(map, renderer, viewFactory);
+        
+        fieldModel.addListener(fieldView);
 
-        // Texture decodes an image file and loads it into GPU memory, it represents a native resource
-        blueTankTexture = new Texture("images/tank_blue.png");
-        // TextureRegion represents Texture portion, there may be many TextureRegion instances of the same Texture
-        playerGraphics = new TextureRegion(blueTankTexture);
-        playerRectangle = createBoundingRectangle(playerGraphics);
-        // set player initial position
-        playerDestinationCoordinates = new GridPoint2(1, 1);
-        playerCoordinates = new GridPoint2(playerDestinationCoordinates);
-        playerRotation = 0f;
+        RandomLevelGenerator levelGenerator = new RandomLevelGenerator(tileMovement, groundLayer, fieldModel.getWidth(), fieldModel.getHeight(), 0.2f);
+        levelGenerator.generate(fieldModel);
 
-        greenTreeTexture = new Texture("images/greenTree.png");
-        treeObstacleGraphics = new TextureRegion(greenTreeTexture);
-        treeObstacleCoordinates = new GridPoint2(1, 3);
-        treeObstacleRectangle = createBoundingRectangle(treeObstacleGraphics);
-        moveRectangleAtTileCenter(groundLayer, treeObstacleRectangle, treeObstacleCoordinates);
+        TankModel playerModel = levelGenerator.getPlayerModel();
+        if (playerModel == null) {
+            throw new IllegalStateException("Level generator did not create a player!");
+        }
+        inputHandler = new PlayerInputHandler(playerModel, uiState, fieldModel);
+        fieldModel.addListener(inputHandler);
+
+        for (TankModel aiTank : levelGenerator.getAiTanks()) {
+            aiController.addTank(aiTank);
+        }
     }
 
     @Override
     public void render() {
-        // clear the screen
         Gdx.gl.glClearColor(0f, 0f, 0.2f, 1f);
         Gdx.gl.glClear(GL_COLOR_BUFFER_BIT);
 
-        // get time passed since the last render
         float deltaTime = Gdx.graphics.getDeltaTime();
 
-        if (Gdx.input.isKeyPressed(UP) || Gdx.input.isKeyPressed(W)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                // check potential player destination for collision with obstacles
-                if (!treeObstacleCoordinates.equals(incrementedY(playerCoordinates))) {
-                    playerDestinationCoordinates.y++;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = 90f;
-            }
-        }
-        if (Gdx.input.isKeyPressed(LEFT) || Gdx.input.isKeyPressed(A)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                if (!treeObstacleCoordinates.equals(decrementedX(playerCoordinates))) {
-                    playerDestinationCoordinates.x--;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = -180f;
-            }
-        }
-        if (Gdx.input.isKeyPressed(DOWN) || Gdx.input.isKeyPressed(S)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                if (!treeObstacleCoordinates.equals(decrementedY(playerCoordinates))) {
-                    playerDestinationCoordinates.y--;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = -90f;
-            }
-        }
-        if (Gdx.input.isKeyPressed(RIGHT) || Gdx.input.isKeyPressed(D)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                if (!treeObstacleCoordinates.equals(incrementedX(playerCoordinates))) {
-                    playerDestinationCoordinates.x++;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = 0f;
-            }
-        }
-
-        // calculate interpolated player screen coordinates
-        tileMovement.moveRectangleBetweenTileCenters(playerRectangle, playerCoordinates, playerDestinationCoordinates, playerMovementProgress);
-
-        playerMovementProgress = continueProgress(playerMovementProgress, deltaTime, MOVEMENT_SPEED);
-        if (isEqual(playerMovementProgress, 1f)) {
-            // record that the player has reached his/her destination
-            playerCoordinates.set(playerDestinationCoordinates);
-        }
-
-        // render each tile of the level
-        levelRenderer.render();
-
-        // start recording all drawing commands
-        batch.begin();
-
-        // render player
-        drawTextureRegionUnscaled(batch, playerGraphics, playerRectangle, playerRotation);
-
-        // render tree obstacle
-        drawTextureRegionUnscaled(batch, treeObstacleGraphics, treeObstacleRectangle, 0f);
-
-        // submit all drawing requests
-        batch.end();
-    }
-
-    @Override
-    public void resize(int width, int height) {
-        // do not react to window resizing
-    }
-
-    @Override
-    public void pause() {
-        // game doesn't get paused
-    }
-
-    @Override
-    public void resume() {
-        // game doesn't get paused
+        inputHandler.handleInput();
+        aiController.update();
+        gameProcessor.update(deltaTime);
+        
+        fieldView.update(deltaTime);
+        fieldView.render(batch);
     }
 
     @Override
     public void dispose() {
-        // dispose of all the native resources (classes which implement com.badlogic.gdx.utils.Disposable)
-        greenTreeTexture.dispose();
-        blueTankTexture.dispose();
-        level.dispose();
+        fieldView.dispose();
         batch.dispose();
     }
 
+    @Override public void resize(int width, int height) {}
+    @Override public void pause() {}
+    @Override public void resume() {}
+
     public static void main(String[] args) {
+        // 1. Создаем контекст Spring
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(GameConfig.class);
+        
+        // 2. Получаем бины "чистой" логики из контекста
+        FieldModel fieldModel = context.getBean(FieldModel.class);
+        GameProcessor gameProcessor = context.getBean(GameProcessor.class);
+        AIController aiController = context.getBean(AIController.class);
+
+        // 3. Создаем главный класс игры, передавая ему бины
+        GameDesktopLauncher game = new GameDesktopLauncher(fieldModel, gameProcessor, aiController);
+        
+        // 4. Запускаем игру
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        // level width: 10 tiles x 128px, height: 8 tiles x 128px
         config.setWindowedMode(1280, 1024);
-        new Lwjgl3Application(new GameDesktopLauncher(), config);
+        new Lwjgl3Application(game, config);
+        
+        // 5. Закрываем контекст при выходе
+        context.close();
     }
 }
