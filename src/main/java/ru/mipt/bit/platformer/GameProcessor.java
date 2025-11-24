@@ -23,16 +23,21 @@ public class GameProcessor {
         movementCoolDown = MOVEMENT_INTERVAL;
 
         List<GameObjectModel> gameObjects = fieldModel.getObjects();
-        List<BulletModel> bullets = new ArrayList<>();
+        List<BulletModel> bulletsToMove = new ArrayList<>();
         for (GameObjectModel obj : gameObjects) {
             if (obj instanceof BulletModel) {
-                bullets.add((BulletModel) obj);
+                bulletsToMove.add((BulletModel) obj);
             }
         }
         
-        for (BulletModel bullet : bullets) {
-            GridPoint2 oldPos = bullet.getCoordinates();
-            GridPoint2 nextPos = oldPos.cpy().add(bullet.getDirection().delta());
+        for (BulletModel bullet : bulletsToMove) {
+            GridPoint2 nextPos = bullet.getCoordinates().cpy().add(bullet.getDirection().delta());
+            
+            if (nextPos.x < 0 || nextPos.x >= fieldModel.getWidth() || nextPos.y < 0 || nextPos.y >= fieldModel.getHeight()) {
+                fieldModel.removeObject(bullet);
+                continue;
+            }
+            
             bullet.setCoordinates(nextPos);
         }
 

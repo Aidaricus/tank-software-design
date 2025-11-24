@@ -17,6 +17,16 @@ public class FieldModel implements ObstacleProvider {
         this.height = height;
     }
 
+    // === НАЧАЛО НОВЫХ МЕТОДОВ ===
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+    // === КОНЕЦ НОВЫХ МЕТОДОВ ===
+
     public void addListener(GameObjectListener listener) {
         listeners.add(listener);
     }
@@ -27,7 +37,7 @@ public class FieldModel implements ObstacleProvider {
             listener.onGameObjectAdded(obj);
         }
     }
-
+    
     public void removeObject(GameObjectModel obj) {
         objectsToRemove.add(obj);
     }
